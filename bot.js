@@ -37,18 +37,18 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var grammy_1 = require("grammy");
-var api_1 = require("./entities/facebook/api");
+var dayReport_1 = require("./entities/facebook/libs/dayReport");
 var bot = new grammy_1.Bot('7564964890:AAGt2JEIwgM-13A8aHSV-TrFXT2jna1KVQw');
-bot.command('start', function (ctx) { return ctx.reply('Welcome! Up and running.'); });
+bot.command('start', function (ctx) { return ctx.reply('Бот активирован.'); });
 bot.on('message', function (ctx) { return __awaiter(void 0, void 0, void 0, function () {
     var insights;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, api_1.facebookApi.getInsights()];
+            case 0: return [4 /*yield*/, (0, dayReport_1.getDayReport)('2024-08-20', '2024-09-18')];
             case 1:
                 insights = _a.sent();
-                console.log(insights[0].impressions);
-                return [2 /*return*/, ctx.reply("impressions ".concat(insights[0].impressions))];
+                console.log(JSON.stringify(insights, null, 2));
+                return [2 /*return*/, ctx.reply(insights)];
         }
     });
 }); });

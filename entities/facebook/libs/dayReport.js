@@ -36,24 +36,27 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.facebookApi = void 0;
-var config_1 = require("../../../config");
-exports.facebookApi = {
-    endpoint: 'insights',
-    getInsights: function (_a) {
-        return __awaiter(this, arguments, void 0, function (_b) {
-            var _c = _b.since, since = _c === void 0 ? '2024-08-20' : _c, _d = _b.until, until = _d === void 0 ? '2024-09-18' : _d;
-            return __generator(this, function (_e) {
-                return [2 /*return*/, config_1.api
-                        .get(this.endpoint, {
-                        params: {
-                            fields: 'impressions,actions,cost_per_action_type,spend',
-                            'time_range[since]': since,
-                            'time_range[until]': until,
-                        },
-                    })
-                        .then(function (res) { return res.data.data; })];
-            });
-        });
-    },
-};
+exports.getDayReport = void 0;
+var constants_1 = require("../../../constants");
+var api_1 = require("../api");
+var getDayReport = function (since, until) { return __awaiter(void 0, void 0, void 0, function () {
+    var insights, link_clicks, cost_per_link_click, messages, cost_per_message, spend;
+    var _a, _b, _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
+            case 0: return [4 /*yield*/, api_1.facebookApi.getInsights({
+                    since: since,
+                    until: until,
+                })];
+            case 1:
+                insights = _e.sent();
+                link_clicks = (_a = insights[0].actions.find(function (action) { return action.action_type === constants_1.actions.LINK_CLICK; })) === null || _a === void 0 ? void 0 : _a.value;
+                cost_per_link_click = (_b = insights[0].cost_per_action_type.find(function (action) { return action.action_type === constants_1.actions.LINK_CLICK; })) === null || _b === void 0 ? void 0 : _b.value;
+                messages = (_c = insights[0].actions.find(function (action) { return action.action_type === constants_1.actions.ONSITE_CONVERSION_TOTAL_MESSAGING_CONNECTION; })) === null || _c === void 0 ? void 0 : _c.value;
+                cost_per_message = (_d = insights[0].cost_per_action_type.find(function (action) { return action.action_type === constants_1.actions.ONSITE_CONVERSION_TOTAL_MESSAGING_CONNECTION; })) === null || _d === void 0 ? void 0 : _d.value;
+                spend = insights[0].spend;
+                return [2 /*return*/, "\n\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0437\u0430 ".concat(since, " - ").concat(until, ":\n\u041A\u043B\u0438\u043A\u0438 \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0435: ").concat(link_clicks, "\n\u0421\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u043A\u043B\u0438\u043A\u0430 \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0435: ").concat(cost_per_link_click, "\n\u0417\u0430\u044F\u0432\u043A\u0438: ").concat(messages, "\n\u0421\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F: ").concat(cost_per_message, "\n\u0420\u0430\u0441\u0445\u043E\u0434: ").concat(spend, "\n  ")];
+        }
+    });
+}); };
+exports.getDayReport = getDayReport;
