@@ -5,21 +5,32 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test",
-    "build": "tsc bot.ts",
-    "start": "node bot.js"
+    "build": "tsc -p tsconfig.json && npm run copy-assets",
+    "start": "node ./dist/bot.js",
+    "dev": "nodemon --watch './**/*.ts' --exec 'npm run build && npm start'",
+    "copy-assets": "copyfiles -u 2 './public/images/**/*' './dist/public/images'"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.5.5",
+    "copyfiles": "^2.4.1",
+    "nodemon": "^3.1.6",
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "@grammyjs/conversations": "^1.2.0",
+    "@grammyjs/menu": "^1.2.2",
+    "@grammyjs/parse-mode": "^1.10.0",
     "axios": "^1.7.7",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
+    "fs": "^0.0.1-security",
     "grammy": "^1.30.0",
     "ky": "^1.7.2",
     "module-alias": "^2.2.3",
+    "path": "^0.12.7",
+    "puppeteer": "^23.4.0",
     "tsconfig-paths": "^4.2.0"
   }
 }

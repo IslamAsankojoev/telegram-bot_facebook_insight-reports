@@ -1,4 +1,4 @@
-export type TInsights = {
+declare type TInsights = {
   impressions: number
   spend: number
   actions: {
@@ -11,11 +11,4 @@ export type TInsights = {
   }[]
   date_start: string
   date_stop: string
-  ad_name: string
-  ad_id: string
-  gender: 'female' | 'male' | 'unknown'
-  age: string
-  country: string
-  region: string
-  publisher_platform: string
 }
