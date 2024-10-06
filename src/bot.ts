@@ -10,16 +10,14 @@ import { hydrateReply } from '@grammyjs/parse-mode'
 import { strapiApi } from './entities/accounts/api'
 import { telegrammChatIdsApi } from './entities/telegramChatIds/api'
 import { TAccount, TAccounts } from './entities/accounts/model'
-import * as dotenv from 'dotenv';
-dotenv.config();
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 export type BotContext = ParseModeFlavor<Context>
 
-const bot = new Bot<BotContext>('7564964890:AAGt2JEIwgM-13A8aHSV-TrFXT2jna1KVQw')
+const bot = new Bot<BotContext>(process.env.BOT_TOKEN!)
 
 bot.use(hydrateReply)
-
-
 
 bot.use(async (ctx, next) => {
   const allowedUsers = await telegrammChatIdsApi.getChatIdsArray()
@@ -32,37 +30,20 @@ bot.use(async (ctx, next) => {
     if (isChatIdCommand) {
       await next()
     } else {
-      return ctx.reply('У вас нет доступа к этому боту')
+      return ctx.reply('🚫 У вас нет доступа к этому боту')
     }
   } else {
     await next()
   }
 })
 
-
 bot.api.setMyCommands([
-  { command: 'get_server', description: 'IP сервера' },
   { command: 'active_accounts', description: 'Выбрать аккаунт' },
   { command: 'all_accounts', description: 'Показать все аккаунты' },
   { command: 'reports', description: 'Выбрать отчет' },
-  { command: 'chat_id', description: 'Получить chat_id' },
+  { command: 'chat_id', description: 'Получить чат ID' },
   { command: 'current_account', description: 'Текущий аккаунт' },
 ])
-
-// Обработчик команды /start
-bot.command('reports', (ctx) => {
-  ctx.reply('Выберите отчет', {
-    reply_markup: {
-      keyboard: reportKeyboard.keyboard,
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  })
-})
-
-bot.command('get_server', (ctx) => {
-  ctx.reply(`IP сервера: ${process.env.SERVER_URL}`)
-})
 
 bot.command('chat_id', (ctx) => {
   ctx.reply(`Ваш чат ID: ${ctx.from?.id}`)
@@ -73,25 +54,32 @@ bot.command('current_account', async (ctx) => {
   ctx.reply(`Текущий аккаунт: ${account?.name}`)
 })
 
+// -------------------------------------
+
+const all_accounts = 'all_accounts'
 bot.command('all_accounts', async (ctx) => {
-  const accountsKeyboard = new InlineKeyboard()
-  const accounts = await strapiApi.getAccounts() as TAccounts
+  const allAccountsKeyboard = new InlineKeyboard()
+  const accounts = (await strapiApi.getAccounts()) as TAccounts
   accounts.data.forEach((account) => {
-    accountsKeyboard.text(account.name, `all_accounts|${account.name}`).row()
+    allAccountsKeyboard.text(account.name, `${all_accounts}|`)
+    .row()
   })
 
-  ctx.reply('Выберите аккаунт', {
-    reply_markup: accountsKeyboard,
+  ctx.reply('Все аккаунты', {
+    reply_markup: allAccountsKeyboard,
   })
 })
 
 // -------------------------------------
+const active_accounts = 'active_accounts'
 bot.command('active_accounts', async (ctx) => {
   const accountsKeyboard = new InlineKeyboard()
-  const accounts = await strapiApi.getAccounts() as TAccounts
+  const accounts = (await strapiApi.getAccounts()) as TAccounts
   const activeAccounts = accounts.data.filter((account) => account.active)
+
   activeAccounts.forEach((account) => {
-    accountsKeyboard.text(account.name, `select_account|${account.name}|${account.documentId}`).row()
+    accountsKeyboard.text(account.name, `${active_accounts}|${account.name}|${account.documentId}`)
+    .row()
   })
 
   ctx.reply('Выберите аккаунт', {
@@ -100,42 +88,57 @@ bot.command('active_accounts', async (ctx) => {
 })
 // -------------------------------------
 
-const reportKeyboard = new Keyboard()
+const reportActions = [
+  {
+    text: 'Отчет за вчерашний день',
+    callback: yesterdayReportCommand,
+  },
+  {
+    text: 'Отчет за неделю',
+    callback: lastWeekReportCommand,
+  },
+  {
+    text: 'Отчет за месяц',
+    callback: lastMonthReportCommand,
+  },
+  {
+    text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
+    callback: dateRangeReportCommand,
+  },
+]
 
-const reportActions = [{
-  text: 'Отчет за вчерашний день',
-  callback: yesterdayReportCommand,
-}, {
-  text: 'Отчет за неделю',
-  callback: lastWeekReportCommand,
-}, {
-  text: 'Отчет за месяц',
-  callback: lastMonthReportCommand,
-}, {
-  text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
-  callback: dateRangeReportCommand,
-}]
+const reports = 'reports'
+bot.command('reports', (ctx) => {
+  const reportKeyboard = new InlineKeyboard()
 
-reportActions.forEach((action) => {
-  reportKeyboard.text(action.text).row()
-  reportKeyboard.placeholder('Выберите отчет')
-  bot.hears(action.text, async (ctx) => {
-    const account = (await strapiApi.getActiveAccount()) as TAccount
-    await action.callback(ctx, account)
+  reportActions.forEach((action) => {
+    reportKeyboard.text(action.text, `${reports}|${action.text}`)
+    .row()
+  })
+
+  ctx.reply('Выберите отчет', {
+    reply_markup: reportKeyboard,
   })
 })
 
-// -------------------------------------
-
 bot.on('callback_query:data', async (ctx) => {
-  await bot.api.answerCallbackQuery(ctx.callbackQuery.id)
-  const [type, name, documentId] = ctx.callbackQuery.data.split('|')
-  if(type === 'select_account') {
-    await strapiApi.setCurrentAccount(documentId)
-    ctx.reply(`Выбран аккаунт ${name}`)
-  }
-  if(type === 'all_accounts') {
-    ctx.reply(`Выбирать аккаунт можно только из списка активных аккаунтов`)
+  const data = ctx.callbackQuery.data.split('|')
+  const account = await strapiApi.getActiveAccount() as TAccount
+  const action = data[0]
+  switch (action) {
+    case reports:
+      const report = reportActions.find((action) => action.text === data[1])
+      report?.callback(ctx, account)
+      break
+    case active_accounts:
+      const accountName = data[1]
+      const documentId = data[2]
+      await strapiApi.setCurrentAccount(documentId)
+      ctx.reply(`Выбран аккаунт: ${accountName}`)
+      break
+    case all_accounts:
+      ctx.reply(`Выбрать аккаунт можно через команду /active_accounts`)
+      break
   }
 })
 
