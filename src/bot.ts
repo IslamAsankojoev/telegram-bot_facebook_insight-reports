@@ -8,6 +8,7 @@ import {
 import type { ParseModeFlavor } from '@grammyjs/parse-mode'
 import { hydrateReply } from '@grammyjs/parse-mode'
 import { strapiApi } from './entities/accounts/api'
+import { telegrammChatIdsApi } from './entities/telegramChatIds/api'
 import { TAccount, TAccounts } from './entities/accounts/model'
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -18,15 +19,16 @@ const bot = new Bot<BotContext>('7564964890:AAGt2JEIwgM-13A8aHSV-TrFXT2jna1KVQw'
 
 bot.use(hydrateReply)
 
-const allowedUsers = [973320422, 1367716681]
+
 
 bot.use(async (ctx, next) => {
+  const allowedUsers = await telegrammChatIdsApi.getChatIdsArray()
   const userId = ctx.from?.id || 0
   const messageText = ctx.message?.text || ''
 
   const isChatIdCommand = messageText.startsWith('/chat_id')
 
-  if (!allowedUsers.includes(userId)) {
+  if (!allowedUsers?.includes(userId.toString())) {
     if (isChatIdCommand) {
       await next()
     } else {

@@ -12,6 +12,6 @@ export const telegrammChatIdsApi = {
   },
   async getChatIdsArray(): Promise<string[] | undefined> {
     const chatIds = await telegrammChatIdsApi.getChatIds()
-    return chatIds?.map((chatId) => chatId.telegramm_chat_id)
+    return chatIds?.map((chatId) => chatId.chat_id)
   }
 }

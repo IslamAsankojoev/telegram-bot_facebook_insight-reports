@@ -1,4 +1,6 @@
 import axios from 'axios'
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export const facebookApiConfig = axios.create({
   baseURL: `https://graph.facebook.com/v20.0`,

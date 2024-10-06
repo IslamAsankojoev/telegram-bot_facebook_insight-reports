@@ -1,8 +1,9 @@
 import { roundToTwoDecimals } from '../../../libs'
-import { Account } from '../../../constants/markers'
 import fs from 'fs'
 import path from 'path'
-import { TAccount, TCurrentAccount } from '@/entities/accounts/model'
+import { TAccount } from '@/entities/accounts/model'
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 interface IHTMLTemplate {
   date: string
