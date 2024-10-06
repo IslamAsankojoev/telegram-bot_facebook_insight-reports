@@ -1,6 +1,8 @@
+import { roundToTwoDecimals } from '../../../libs'
 import { Account } from '../../../constants/markers'
 import fs from 'fs'
 import path from 'path'
+import { TAccount, TCurrentAccount } from '@/entities/accounts/model'
 
 interface IHTMLTemplate {
   date: string
@@ -20,16 +22,18 @@ interface IHTMLTemplate {
     cost_per_message: number
     spend: number
   }[]
-  account?: Account
+  account?: TAccount
+  split?: boolean
 }
 
-export const getHTMLTemplate = (props: IHTMLTemplate) => {
-
-  const imagePath = path.join(process.cwd(), 'public', 'images', props.account?.logo || 'logo.png')
-  const imageBase64 = fs.readFileSync(imagePath).toString('base64')
-  const imageSrc = `data:image/jpeg;base64,${imageBase64}`
-
-  const verifyPath = path.join(process.cwd(), 'verfy-icon.png')
+export const getHTMLTemplate = ({ split = true, ...props }: IHTMLTemplate) => {
+  const verifyPath = path.join(
+    process.cwd(),
+    'dist',
+    'public',
+    'images',
+    'verfy-icon.png'
+  )
   const verifyBase64 = fs.readFileSync(verifyPath).toString('base64')
   const verifySrc = `data:image/jpeg;base64,${verifyBase64}`
 
@@ -75,7 +79,7 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
 </head>
 <body>
 
-  ${imageSrc ? `<img class="logo" src=${imageSrc} />`: ''}
+  ${props.account?.logo ? `<img class="logo" src="${process.env.SERVER_URL}${props.account?.logo.url}" />` : ''}
   
   <h2>Отчет за ${props.date}</h2>
   <div class="section">
@@ -87,33 +91,39 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
       </tr>
       <tr>
         <td>Всего кликов по ссылке</td>
-        <td>${props.link_clicks_all}</td>
+        <td>${roundToTwoDecimals(Number(props.link_clicks_all))}</td>
       </tr>
       <tr>
         <td>Стоимость за клик по ссылке</td>
-        <td>${props.cost_per_link_click_all}<span class="money">$</span></td>
+        <td>${roundToTwoDecimals(
+          Number(props.cost_per_link_click_all),
+        )}<span class="money">$</span></td>
       </tr>
       <tr>
         <td>Всего заявок</td>
-        <td>${props.messages_all}</td>
+        <td>${roundToTwoDecimals(Number(props.messages_all))}</td>
       </tr>
       <tr>
         <td>Стоимость за заявку</td>
-        <td>${props.cost_per_message_all}<span class="money">$</span></td>
+        <td>${roundToTwoDecimals(
+          Number(props.cost_per_message_all),
+        )}<span class="money">$</span></td>
       </tr>
       <tr>
         <td>Всего расходов</td>
-        <td>${props.spend_all}<span class="money">$</span></td>
+        <td>${roundToTwoDecimals(Number(props.spend_all))}<span class="money">$</span></td>
       </tr>
       <tr>
         <td
         colspan="2"
-        ><b>Конверсия:из клика в заявку = ${props.conversion}%</b></td>
+        ><b>Конверсия:из клика в заявку = ${roundToTwoDecimals(Number(props.conversion))}%</b></td>
       </tr>
     </table>
   </div>
   
-  ${props.top_age ? `<div class="section">
+  ${
+    props.top_age
+      ? `<div class="section">
     <table>
       <tr class="head">
         <th>Возрастная группа</th>
@@ -124,15 +134,19 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
           ([ageGroup, ageMessages]) => `
         <tr>
           <td>${ageGroup}</td>
-          <td>${ageMessages}</td>
+          <td>${roundToTwoDecimals(Number(ageMessages))}</td>
         </tr>
       `,
         )
         .join('')}
     </table>
-  </div>` : ''}
+  </div>`
+      : ''
+  }
   
-  ${props.platform_coverage ? `<div class="section">
+  ${
+    props.platform_coverage
+      ? `<div class="section">
     <table>
      <tr class="head">
         <th>Платформа</th>
@@ -143,15 +157,21 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
           (platform) => `
         <tr>
           <td>${platform.publisher_platform}</td>
-          <td>${platform.percentage}%</td>
+          <td>${roundToTwoDecimals(Number(platform.percentage))}%</td>
         </tr>
       `,
         )
         .join('')}
     </table>
-  </div>` : ''}
-  
-  ${props.country_coverage ? `<div class="section">
+  </div>`
+      : ''
+  }
+  ${split ? '<div class="page-break"></div>  <br><br>' : ''}
+ 
+
+  ${
+    props.country_coverage
+      ? `<div class="section">
     <table>
       <tr class="head">
         <th>Страна</th>
@@ -162,15 +182,19 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
           (country) => `
         <tr>
           <td>${country.country}</td>
-          <td>${country.percentage}%</td>
+          <td>${roundToTwoDecimals(Number(country.percentage))}%</td>
         </tr>
       `,
         )
         .join('')}
     </table>
-  </div>` : ''}
+  </div>`
+      : ''
+  }
   
-  ${props.region_coverage ? `<div class="section">
+  ${
+    props.region_coverage
+      ? `<div class="section">
     <table>
       <tr class="head">
         <th>Регион</th>
@@ -181,15 +205,21 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
           (region) => `
         <tr>
           <td>${region.region}</td>
-          <td>${region.percentage}%</td>
+          <td>${roundToTwoDecimals(Number(region.percentage))}%</td>
         </tr>
       `,
         )
         .join('')}
     </table>
-  </div>` : ''}
+  </div>`
+      : ''
+  }
 
-  ${props.top_age || props.platform_coverage || props.country_coverage || props.region_coverage ? '<div class="page-break"></div>' : ''}
+  ${
+    props.top_age || props.platform_coverage || props.country_coverage || props.region_coverage
+      ? '<div class="page-break"></div>'
+      : ''
+  }
 
   <br><br>
   <div class="section">
@@ -204,8 +234,10 @@ export const getHTMLTemplate = (props: IHTMLTemplate) => {
           (insights) => `
         <tr>
           <td>${insights.ad_name}</td>
-          <td>${insights.messages}</td>
-          <td>${insights.cost_per_message}<span class="money">$</span></td>
+          <td>${roundToTwoDecimals(Number(insights.messages))}</td>
+          <td>${roundToTwoDecimals(
+            Number(insights.cost_per_message),
+          )}<span class="money">$</span></td>
         </tr>
       `,
         )

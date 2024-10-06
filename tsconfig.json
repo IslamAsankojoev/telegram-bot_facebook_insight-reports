@@ -8,12 +8,13 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
+    "outDir": "./dist",                       // Папка для компиляции
+    "rootDir": "./src",                       // Указываем папку исходников
+    "baseUrl": "./",                          // Базовый путь
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["src/*"]                        // Алиас для удобства
     }
   },
-  "include": ["./**/*", "entities/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],                    // Включаем только исходные файлы
+  "exclude": ["node_modules", "dist"]         // Исключаем node_modules и dist
 }

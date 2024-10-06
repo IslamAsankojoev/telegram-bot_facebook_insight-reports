@@ -1,50 +1,41 @@
 import { facebookApi } from '../api'
 import { Context, InputFile } from 'grammy'
-import { createPdf, roundToTwoDecimals } from '../../../libs'
 import dayjs from 'dayjs'
+import { createPdf, roundToTwoDecimals } from '../../../libs'
 import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { Account } from '../../../constants/markers'
+import { TAccount } from '@/entities/accounts/model'
 
-export const dateRangeReportCommand = async (ctx: Context, account: Account) => {
+export const lastMonthReportCommand = async (ctx: Context, account: TAccount) => {
   ctx.replyWithChatAction('typing')
-  const userMessage = ctx?.message?.text?.split(' ') || []
-  if (!userMessage || userMessage.length < 3) {
-    return ctx.reply('Укажите даты начала и конца периода')
-  }
-
-  const [_, firstDate, secondDate] = userMessage
-  const startDate = dayjs(firstDate).format('YYYY-MM-DD')
-  const endDate = dayjs(secondDate).format('YYYY-MM-DD')
-
-  if (startDate > endDate) {
-    return ctx.reply('Дата начала периода должна быть меньше даты окончания')
-  }
+  const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
+  const monthBackDate = dayjs().subtract(31, 'day').format('YYYY-MM-DD')
 
   try {
     const insightsAll = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      since: monthBackDate,
+      until: yesterday,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
-
     const insightsAllData = insightsAll.map((insight) => ({
       link_clicks: getLinkClicks(insight).link_clicks,
       cost_per_link_click: getLinkClicks(insight).cost_per_link_click,
       messages: getMessages(insight).messages,
       cost_per_message: getMessages(insight).cost_per_message,
       spend: insight.spend,
+      impressions: insight.impressions,
     }))
 
-    if(!insightsAllData[0]) {
-      return ctx.reply('Нет данных за указанный период')
+    if (!insightsAllData[0]) {
+      return ctx.reply('Нет данных за последний месяц')
     }
 
     const insightsAdLevel = await facebookApi.getInsightsAdLevel({
-      since: startDate,
-      until: endDate,
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      since: monthBackDate,
+      until: yesterday,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
 
     const insightsAdLevelData = insightsAdLevel
@@ -57,11 +48,11 @@ export const dateRangeReportCommand = async (ctx: Context, account: Account) => 
       .sort((a, b) => b.messages - a.messages)
 
     const genderInsights = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
+      since: monthBackDate,
+      until: yesterday,
       breakdowns: 'gender',
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
     const femaleLeads = getMessages(
       genderInsights.find((insight) => insight.gender === 'female'),
@@ -76,13 +67,12 @@ export const dateRangeReportCommand = async (ctx: Context, account: Account) => 
     ).messages
 
     const ageInsights = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
+      since: monthBackDate,
+      until: yesterday,
       breakdowns: 'age',
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
-
     const ageHashMap = new Map()
     ageInsights.forEach((insight) => {
       const age = insight.age
@@ -93,17 +83,16 @@ export const dateRangeReportCommand = async (ctx: Context, account: Account) => 
         ageHashMap.set(age, messages)
       }
     })
-
     const ageInsightsArray = Array.from(ageHashMap.entries())
     const ageInsightsSorted = ageInsightsArray.sort((a, b) => b[1] - a[1])
     const topAgeInsights = ageInsightsSorted
 
     const platformsIsights = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
+      since: monthBackDate,
+      until: yesterday,
       breakdowns: 'publisher_platform',
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
 
     const platformСoverageInPercent = platformsIsights.map((insight) => ({
@@ -112,11 +101,11 @@ export const dateRangeReportCommand = async (ctx: Context, account: Account) => 
     }))
 
     const countryInsights = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
+      since: monthBackDate,
+      until: yesterday,
       breakdowns: 'country',
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
 
     const countryCoverageInPercent = countryInsights.map((insight) => ({
@@ -125,20 +114,20 @@ export const dateRangeReportCommand = async (ctx: Context, account: Account) => 
     }))
 
     const regionInsights = await facebookApi.getInsights({
-      since: startDate,
-      until: endDate,
+      since: monthBackDate,
+      until: yesterday,
       breakdowns: 'region',
-      id: account.ad_obj_id,
-      access_token: account.accessToken,
+      id: account.ad_account_id,
+      access_token: account.marker,
     })
 
     const regionCoverageInPercent = regionInsights.map((insight) => ({
       region: insight.region,
-      percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
+      percentage: (insight.impressions / insightsAllData[0]?.impressions) * 100,
     }))
 
     const content = `
-Отчет за ${startDate} по ${endDate}:
+Отчет за месяц (с ${monthBackDate} по ${yesterday}):
 Клики по ссылке: ${insightsAllData[0]?.link_clicks}
 Стоимость клика по ссылке: ${roundToTwoDecimals(insightsAllData[0]?.cost_per_link_click)}$
 Заявки: ${insightsAllData[0]?.messages}
@@ -182,7 +171,7 @@ ${region.region}: ${roundToTwoDecimals(region.percentage)}%`,
 ЖЕН - ${femaleLeads}
 НЕИЗВ - ${unknownLeads}
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Отчет по Креативам:
 ${insightsAdLevelData
@@ -196,7 +185,7 @@ ${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_mess
   `
 
     const html = getHTMLTemplate({
-      date: `${startDate} по ${endDate}`,
+      date: `${monthBackDate} по ${yesterday}`,
       link_clicks_all: insightsAllData[0]?.link_clicks,
       cost_per_link_click_all: roundToTwoDecimals(insightsAllData[0]?.cost_per_link_click),
       messages_all: insightsAllData[0]?.messages,
@@ -213,12 +202,16 @@ ${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_mess
       account,
     })
     const pdf = await createPdf(html)
-    await ctx.replyWithDocument(new InputFile(pdf, `Отчет - (${startDate} по ${endDate}).pdf`), {
-      // caption: content,
-      // parse_mode: 'HTML',
-    })
+
+    await ctx.replyWithDocument(
+      new InputFile(pdf, `Отчет - (${monthBackDate} по ${yesterday}).pdf`),
+      {
+        // caption: content,
+        // parse_mode: 'HTML',
+      },
+    )
   } catch (error) {
     console.error(error)
-    await ctx.reply('Произошла ошибка при формировании отчета')
+    ctx.reply('Произошла ошибка, попробуйте позже')
   }
 }

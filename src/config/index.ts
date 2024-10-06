@@ -1,0 +1,1 @@
+export { facebookApiConfig, strapiApiConfig } from './api'

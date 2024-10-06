@@ -1,11 +1,12 @@
-import { api } from '../../../config'
+import dayjs from 'dayjs'
+import { facebookApiConfig } from '../../../config'
 import { TInsights } from '../model/index'
 
 export const facebookApi = {
   endpoint: 'insights',
   async getInsights({
-    since = '2024-08-20',
-    until = '2024-09-18',
+    since = dayjs().subtract(31, 'day').format('YYYY-MM-DD'),
+    until = dayjs().format('YYYY-MM-DD'),
     breakdowns = '',
     id,
     access_token,
@@ -16,8 +17,8 @@ export const facebookApi = {
     id: string
     access_token: string
   }): Promise<TInsights[]> {
-    return api
-      .get(`${id}/${this.endpoint}`, {
+    return facebookApiConfig
+      .get(`act_${id}/${this.endpoint}`, {
         params: {
           fields: 'impressions,actions,cost_per_action_type,spend',
           breakdowns,
@@ -31,8 +32,8 @@ export const facebookApi = {
       })
   },
   async getInsightsAdLevel({
-    since = '2024-08-20',
-    until = '2024-09-18',
+    since = dayjs().subtract(31, 'day').format('YYYY-MM-DD'),
+    until = dayjs().format('YYYY-MM-DD'),
     breakdowns = '',
     id,
     access_token,
@@ -43,8 +44,8 @@ export const facebookApi = {
     id: string
     access_token: string
   }): Promise<TInsights[]> {
-    return api
-      .get(`${id}/${this.endpoint}`, {
+    return facebookApiConfig
+      .get(`act_${id}/${this.endpoint}`, {
         params: {
           fields: 'impressions,actions,cost_per_action_type,spend,ad_name',
           level: 'ad',

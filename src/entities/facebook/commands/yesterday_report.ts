@@ -5,8 +5,9 @@ import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { BotContext } from '../../../bot'
 import { InputFile } from 'grammy'
 import { Account } from '../../../constants/markers'
+import { TAccount, TCurrentAccount } from '@/entities/accounts/model'
 
-export const yesterdayReportCommand = async (ctx: BotContext, account: Account) => {
+export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount) => {
   ctx.replyWithChatAction('typing')
   const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
 
@@ -15,8 +16,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
   const insightsAll = await facebookApi.getInsights({
     since: yesterday,
     until: yesterday,
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
   const insightsAllData = insightsAll.map((insight) => ({
     link_clicks: getLinkClicks(insight).link_clicks,
@@ -33,8 +34,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
   const insightsAdLevel = await facebookApi.getInsightsAdLevel({
     since: yesterday,
     until: yesterday,
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
 
   const insightsAdLevelData = insightsAdLevel
@@ -50,8 +51,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
     since: yesterday,
     until: yesterday,
     breakdowns: 'gender',
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
   const femaleLeads = getMessages(
     genderInsights.find((insight) => insight.gender === 'female'),
@@ -69,8 +70,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
     since: yesterday,
     until: yesterday,
     breakdowns: 'age',
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
   const ageHashMap = new Map()
   ageInsights.forEach((insight) => {
@@ -90,8 +91,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
     since: yesterday,
     until: yesterday,
     breakdowns: 'publisher_platform',
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
 
   const platformСoverageInPercent = platformsIsights.map((insight) => ({
@@ -103,8 +104,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
     since: yesterday,
     until: yesterday,
     breakdowns: 'country',
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
 
   const countryCoverageInPercent = countryInsights.map((insight) => ({
@@ -116,8 +117,8 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: Account) 
     since: yesterday,
     until: yesterday,
     breakdowns: 'region',
-    id: account.ad_obj_id,
-    access_token: account.accessToken,
+    id: account.ad_account_id,
+    access_token: account.marker,
   })
 
   const regionCoverageInPercent = regionInsights.map((insight) => ({
@@ -198,6 +199,7 @@ ${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_mess
     // region_coverage: regionCoverageInPercent,
     creative_insights: insightsAdLevelData,
     account,
+    split: false,
   })
   const pdf = await createPdf(html)
 
