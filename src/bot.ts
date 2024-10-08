@@ -3,6 +3,7 @@ import {
   dateRangeReportCommand,
   lastMonthReportCommand,
   lastWeekReportCommand,
+  todayReportCommand,
   yesterdayReportCommand,
 } from './entities/facebook/commands'
 import type { ParseModeFlavor } from '@grammyjs/parse-mode'
@@ -65,7 +66,7 @@ bot.command('all_accounts', async (ctx) => {
     .row()
   })
 
-  ctx.reply('Все аккаунты', {
+  ctx.reply('Выберите аккаунт', {
     reply_markup: allAccountsKeyboard,
   })
 })
@@ -89,6 +90,10 @@ bot.command('active_accounts', async (ctx) => {
 // -------------------------------------
 
 const reportActions = [
+  {
+    text: 'Отчет за сегодня',
+    callback: todayReportCommand,
+  },
   {
     text: 'Отчет за вчерашний день',
     callback: yesterdayReportCommand,

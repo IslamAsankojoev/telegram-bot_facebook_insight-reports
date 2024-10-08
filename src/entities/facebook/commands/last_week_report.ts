@@ -1,10 +1,9 @@
 import { facebookApi } from '../api'
-import { Context, InputFile } from 'grammy'
+import { InputFile } from 'grammy'
 import dayjs from 'dayjs'
 import { createPdf, roundToTwoDecimals } from '../../../libs'
 import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { BotContext } from '../../../bot'
-import { Account } from '../../../constants/markers'
 import { TAccount } from '@/entities/accounts/model'
 
 export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) => {
@@ -126,64 +125,6 @@ export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) 
       percentage: (insight.impressions / insightsAllData[0]?.impressions) * 100,
     }))
 
-    const content = `
-Отчет за неделю (с ${weekBackDate} по ${yesterday}):
-Клики по ссылке: ${insightsAllData[0]?.link_clicks}
-Стоимость клика по ссылке: ${roundToTwoDecimals(insightsAllData[0]?.cost_per_link_click)}$
-Заявки: ${insightsAllData[0]?.messages}
-Стоимость заявки: ${roundToTwoDecimals(insightsAllData[0]?.cost_per_message)}$
-Расход: ${insightsAllData[0]?.spend}$
-
-Конверсия:из клика в заявку = ${roundToTwoDecimals(
-      (insightsAllData[0]?.messages / insightsAllData[0]?.link_clicks) * 100,
-    )}%
-
-Аудитория: ${topAgeInsights
-      .map(
-        (age) => `
-Возраст: ${age[0]} (${age[1]} заявок)`,
-      )
-      .join('')}
-
-Платформа: ${platformСoverageInPercent
-      .map(
-        (platform) => `
-${platform.publisher_platform}: ${roundToTwoDecimals(platform.percentage)}%`,
-      )
-      .join(', ')}
-
-Страна: ${countryCoverageInPercent
-      .map(
-        (country) => `
-${country.country}: ${roundToTwoDecimals(country.percentage)}%`,
-      )
-      .join(', ')}
-
-Регион: ${regionCoverageInPercent
-      .map(
-        (region) => `
-${region.region}: ${roundToTwoDecimals(region.percentage)}%`,
-      )
-      .join(', ')}
-
-Пол: 
-МУЖ - ${maleLeads}
-ЖЕН - ${femaleLeads}
-НЕИЗВ - ${unknownLeads}
-
-- - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Отчет по Креативам:
-${insightsAdLevelData
-  .map(
-    (insight) => `
-${insight.ad_name}:
-${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_message)}$
-`,
-  )
-  .join('')}
-  `
-
     const html = getHTMLTemplate({
       date: `${weekBackDate} по ${yesterday}`,
       link_clicks_all: insightsAllData[0]?.link_clicks,
@@ -203,13 +144,7 @@ ${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_mess
     })
     const pdf = await createPdf(html)
 
-    await ctx.replyWithDocument(
-      new InputFile(pdf, `Отчет - (${weekBackDate} по ${yesterday}).pdf`),
-      {
-        // caption: content,
-        // parse_mode: 'HTML',
-      },
-    )
+    await ctx.replyWithDocument(new InputFile(pdf, `Отчет - (${weekBackDate} по ${yesterday}).pdf`))
   } catch (error) {
     console.error(error)
     await ctx.reply('Произошла ошибка при формировании отчета')

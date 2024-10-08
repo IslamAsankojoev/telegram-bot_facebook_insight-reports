@@ -20,7 +20,7 @@ export const Accounts: Account[] = [
     name: 'Стоматолог',
     ad_obj_id: 'act_1134706723618523',
     accessToken:
-      'EAAXzY1fy8pABOZCJyCGw8CkodPEFByME84KuOXYubZADM1WlBUBojYRQtFZCKQuC1zPZBrXdZCltg5ZAvhxQLw1uKltK2J8O7jSwHb5NNXv70fLMlvRu0Y3ftfKlkYQy1nb0diHNfmiZApuhzw1pnm8HvsgVh6XAmPmGVVKDubNzAFQFKZBotV7G3SwV5jsPYfIw1ZCMCpvKxx0QwPBtr',
+      'EAAXzY1fy8pABOym4ZAI7VYKD6lh9seGCRo6LfcxP3jGFvLB7Dpt5ZCG9uwJWeli0qyf981gEvMQ6thPttmWb1fZCZAl7ln7JL0cIFfNIYKLzju1cUsNb1PnJ9S4POEJLtbXqcMoDpxZAMB3d4pbgNtVuPDMZBVVDM8cuKF44KVlwNYKrOn53JwnEW4xZBxTP0qowvYEZAy2iRRXEqK7G',
   },
   {
     id: '708072161316593',

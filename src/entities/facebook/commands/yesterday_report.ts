@@ -4,8 +4,7 @@ import { createPdf, roundToTwoDecimals } from '../../../libs'
 import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { BotContext } from '../../../bot'
 import { InputFile } from 'grammy'
-import { Account } from '../../../constants/markers'
-import { TAccount, TCurrentAccount } from '@/entities/accounts/model'
+import { TAccount } from '@/entities/accounts/model'
 
 export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount) => {
   ctx.replyWithChatAction('typing')
@@ -83,106 +82,49 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount)
       ageHashMap.set(age, messages)
     }
   })
-  const ageInsightsArray = Array.from(ageHashMap.entries())
-  const ageInsightsSorted = ageInsightsArray.sort((a, b) => b[1] - a[1])
-  const topAgeInsights = ageInsightsSorted
+  // const ageInsightsArray = Array.from(ageHashMap.entries())
+  // const ageInsightsSorted = ageInsightsArray.sort((a, b) => b[1] - a[1])
+  // const topAgeInsights = ageInsightsSorted
 
-  const platformsIsights = await facebookApi.getInsights({
-    since: yesterday,
-    until: yesterday,
-    breakdowns: 'publisher_platform',
-    id: account.ad_account_id,
-    access_token: account.marker,
-  })
+  // const platformsIsights = await facebookApi.getInsights({
+  //   since: yesterday,
+  //   until: yesterday,
+  //   breakdowns: 'publisher_platform',
+  //   id: account.ad_account_id,
+  //   access_token: account.marker,
+  // })
 
-  const platformСoverageInPercent = platformsIsights.map((insight) => ({
-    publisher_platform: insight.publisher_platform,
-    percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  }))
+  // const platformСoverageInPercent = platformsIsights.map((insight) => ({
+  //   publisher_platform: insight.publisher_platform,
+  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
+  // }))
 
-  const countryInsights = await facebookApi.getInsights({
-    since: yesterday,
-    until: yesterday,
-    breakdowns: 'country',
-    id: account.ad_account_id,
-    access_token: account.marker,
-  })
+  // const countryInsights = await facebookApi.getInsights({
+  //   since: yesterday,
+  //   until: yesterday,
+  //   breakdowns: 'country',
+  //   id: account.ad_account_id,
+  //   access_token: account.marker,
+  // })
 
-  const countryCoverageInPercent = countryInsights.map((insight) => ({
-    country: insight.country,
-    percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  }))
+  // const countryCoverageInPercent = countryInsights.map((insight) => ({
+  //   country: insight.country,
+  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
+  // }))
 
-  const regionInsights = await facebookApi.getInsights({
-    since: yesterday,
-    until: yesterday,
-    breakdowns: 'region',
-    id: account.ad_account_id,
-    access_token: account.marker,
-  })
+  // const regionInsights = await facebookApi.getInsights({
+  //   since: yesterday,
+  //   until: yesterday,
+  //   breakdowns: 'region',
+  //   id: account.ad_account_id,
+  //   access_token: account.marker,
+  // })
 
-  const regionCoverageInPercent = regionInsights.map((insight) => ({
-    region: insight.region,
-    percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  }))
+  // const regionCoverageInPercent = regionInsights.map((insight) => ({
+  //   region: insight.region,
+  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
+  // }))
 
-  const content = `
-<b>Отчет за вчерашний день (${yesterday})</b>:
-Клики по ссылке: ${insightsAllData[0]?.link_clicks}
-Стоимость клика по ссылке: ${roundToTwoDecimals(insightsAllData[0]?.cost_per_link_click)}$
-Заявки: ${insightsAllData[0]?.messages}
-Стоимость заявки: ${roundToTwoDecimals(insightsAllData[0]?.cost_per_message)}$
-Расход: ${insightsAllData[0]?.spend}$
-
-Конверсия:из клика в заявку = ${roundToTwoDecimals(
-    (insightsAllData[0]?.messages / insightsAllData[0]?.link_clicks) * 100,
-  )}%
-
-Аудитория: ${topAgeInsights
-    .map(
-      (age) => `
-Возраст: ${age[0]} (${age[1]} заявок)`,
-    )
-    .join('')}
-
-Платформа: ${platformСoverageInPercent
-    .map(
-      (platform) => `
-${platform.publisher_platform}: ${roundToTwoDecimals(platform.percentage)}%`,
-    )
-    .join(', ')}
-
-Страна: ${countryCoverageInPercent
-    .map(
-      (country) => `
-${country.country}: ${roundToTwoDecimals(country.percentage)}%`,
-    )
-    .join(', ')}
-
-Регион: ${regionCoverageInPercent
-    .map(
-      (region) => `
-${region.region}: ${roundToTwoDecimals(region.percentage)}%`,
-    )
-    .join(', ')}
-
-Пол: 
-МУЖ - ${maleLeads}
-ЖЕН - ${femaleLeads}
-НЕИЗВ - ${unknownLeads}
-
-- - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Отчет по Креативам:
-${insightsAdLevelData
-  .map(
-    (insight) => `
-${insight.ad_name}:
-${insight.messages} заявок по ${roundToTwoDecimals(insight.cost_per_message)}$
-`,
-  )
-  .join('')}
-  `
   const html = getHTMLTemplate({
     date: yesterday,
     link_clicks_all: insightsAllData[0]?.link_clicks,
