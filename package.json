@@ -24,6 +24,8 @@
     "@grammyjs/parse-mode": "^1.10.0",
     "axios": "^1.7.7",
     "dayjs": "^1.11.13",
+    "dayjs-plugin-utc": "^0.1.2",
+    "dayjs-timezone-iana-plugin": "^0.1.0",
     "dotenv": "^16.4.5",
     "fs": "^0.0.1-security",
     "grammy": "^1.30.0",

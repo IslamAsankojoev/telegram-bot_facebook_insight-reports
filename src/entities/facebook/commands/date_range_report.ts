@@ -4,6 +4,11 @@ import { createPdf, roundToTwoDecimals } from '../../../libs'
 import dayjs from 'dayjs'
 import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { TAccount } from '@/entities/accounts/model'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Bishkek")
 
 export const dateRangeReportCommand = async (ctx: Context, account: TAccount) => {
   ctx.replyWithChatAction('typing')

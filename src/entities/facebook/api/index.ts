@@ -1,6 +1,11 @@
 import dayjs from 'dayjs'
 import { facebookApiConfig } from '../../../config'
 import { TInsights } from '../model/index'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Bishkek")
 
 export const facebookApi = {
   endpoint: 'insights',

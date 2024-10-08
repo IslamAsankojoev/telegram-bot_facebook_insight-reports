@@ -5,6 +5,11 @@ import { createPdf, roundToTwoDecimals } from '../../../libs'
 import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { BotContext } from '../../../bot'
 import { TAccount } from '@/entities/accounts/model'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Bishkek")
 
 export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) => {
   ctx.replyWithChatAction('typing')

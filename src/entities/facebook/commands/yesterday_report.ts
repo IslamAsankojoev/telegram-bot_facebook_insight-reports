@@ -5,6 +5,11 @@ import { getHTMLTemplate, getLinkClicks, getMessages } from '../libs'
 import { BotContext } from '../../../bot'
 import { InputFile } from 'grammy'
 import { TAccount } from '@/entities/accounts/model'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Bishkek")
 
 export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount) => {
   ctx.replyWithChatAction('typing')
