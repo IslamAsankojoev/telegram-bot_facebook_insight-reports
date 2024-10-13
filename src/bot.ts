@@ -1,4 +1,4 @@
-import { Bot, Context, InlineKeyboard, Keyboard } from 'grammy'
+import { Bot, Context, InlineKeyboard } from 'grammy'
 import {
   dateRangeReportCommand,
   lastMonthReportCommand,
@@ -39,8 +39,8 @@ bot.use(async (ctx, next) => {
 })
 
 bot.api.setMyCommands([
-  { command: 'active_accounts', description: 'Выбрать аккаунт' },
-  { command: 'all_accounts', description: 'Показать все аккаунты' },
+  { command: 'accounts', description: 'Выбрать аккаунт' },
+  // { command: 'all_accounts', description: 'Показать все аккаунты' },
   { command: 'reports', description: 'Выбрать отчет' },
   { command: 'chat_id', description: 'Получить чат ID' },
   { command: 'current_account', description: 'Текущий аккаунт' },
@@ -57,36 +57,23 @@ bot.command('current_account', async (ctx) => {
 
 // -------------------------------------
 
-const all_accounts = 'all_accounts'
-bot.command('all_accounts', async (ctx) => {
-  const allAccountsKeyboard = new InlineKeyboard()
-  const accounts = (await strapiApi.getAccounts()) as TAccounts
-  accounts.data.forEach((account) => {
-    allAccountsKeyboard.text(account.name, `${all_accounts}|`)
-    .row()
-  })
-
-  ctx.reply('Выберите аккаунт', {
-    reply_markup: allAccountsKeyboard,
-  })
-})
-
-// -------------------------------------
-const active_accounts = 'active_accounts'
-bot.command('active_accounts', async (ctx) => {
+const active_accounts = 'accounts'
+bot.command('accounts', async (ctx) => {
   const accountsKeyboard = new InlineKeyboard()
   const accounts = (await strapiApi.getAccounts()) as TAccounts
   const activeAccounts = accounts.data.filter((account) => account.active)
 
   activeAccounts.forEach((account) => {
-    accountsKeyboard.text(account.name, `${active_accounts}|${account.name}|${account.documentId}`)
-    .row()
+    accountsKeyboard
+      .text(account.name, `${active_accounts}|${account.name}|${account.documentId}`)
+      .row()
   })
 
-  ctx.reply('Выберите аккаунт', {
+  await ctx.reply('Выберите аккаунт', {
     reply_markup: accountsKeyboard,
   })
 })
+
 // -------------------------------------
 
 const reportActions = [
@@ -113,36 +100,44 @@ const reportActions = [
 ]
 
 const reports = 'reports'
-bot.command('reports', (ctx) => {
+bot.command('reports', async (ctx) => {
   const reportKeyboard = new InlineKeyboard()
 
   reportActions.forEach((action) => {
-    reportKeyboard.text(action.text, `${reports}|${action.text}`)
-    .row()
+    reportKeyboard.text(action.text, `${reports}|${action.text}`).row()
   })
-
-  ctx.reply('Выберите отчет', {
+  const account = (await strapiApi.getActiveAccount()) as TAccount
+  ctx.reply(`Выберите отчет по проекту: ${account.name}`, {
     reply_markup: reportKeyboard,
   })
 })
 
 bot.on('callback_query:data', async (ctx) => {
   const data = ctx.callbackQuery.data.split('|')
-  const account = await strapiApi.getActiveAccount() as TAccount
+  const account = (await strapiApi.getActiveAccount()) as TAccount
   const action = data[0]
   switch (action) {
     case reports:
       const report = reportActions.find((action) => action.text === data[1])
-      report?.callback(ctx, account)
+      await report?.callback(ctx, account)
+      await ctx.editMessageText(`${account.name}`)
       break
     case active_accounts:
       const accountName = data[1]
       const documentId = data[2]
       await strapiApi.setCurrentAccount(documentId)
-      ctx.reply(`Выбран аккаунт: ${accountName}`)
-      break
-    case all_accounts:
-      ctx.reply(`Выбрать аккаунт можно через команду /active_accounts`)
+
+      const reportKeyboard = new InlineKeyboard()
+
+      reportActions.forEach((action) => {
+        reportKeyboard.text(action.text, `${reports}|${action.text}`).row()
+      })
+
+      await ctx.editMessageText(`Выберите отчет по проекту: ${accountName}`)
+
+      await ctx.editMessageReplyMarkup({
+        reply_markup: reportKeyboard,
+      })
       break
   }
 })

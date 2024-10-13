@@ -31,7 +31,7 @@ export const todayReportCommand = async (ctx: BotContext, account: TAccount) => 
     }))
 
     if (!insightsAllData[0]) {
-      return ctx.reply('Нет данных за вчерашний день')
+      return ctx.reply('Нет данных за сегодня')
     }
 
     const insightsAdLevel = await facebookApi.getInsightsAdLevel({
