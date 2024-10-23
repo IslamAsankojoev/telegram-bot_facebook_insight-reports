@@ -46,7 +46,7 @@ export const dateRangeReportCommand = async (ctx: Context, account: TAccount) =>
     }))
 
     if (!insightsAllData?.[0]) {
-      return ctx.reply('Нет данных за указанный период')
+      return null
     }
 
     const insightsAdLevel = await facebookApi.getInsightsAdLevel({
@@ -164,7 +164,8 @@ export const dateRangeReportCommand = async (ctx: Context, account: TAccount) =>
       account,
     })
     const pdf = await createPdf(html)
-    await ctx.replyWithDocument(new InputFile(pdf, `Отчет - (${startDate} по ${endDate}).pdf`))
+    const file = new InputFile(pdf, `Отчет - (${startDate} по ${endDate}).pdf`) 
+    return file
   } catch (error) {
     console.error(error)
     await ctx.reply('Произошла ошибка при формировании отчета')

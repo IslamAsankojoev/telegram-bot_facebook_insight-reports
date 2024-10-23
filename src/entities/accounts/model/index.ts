@@ -47,6 +47,17 @@ export type TUpdateCurrentAccount = {
   }
 }
 
+export type TTelegramGroup = {
+  id: number
+  documentId: string
+  name: string
+  chat_id: string
+  createdAt: string
+  updatedAt: string
+  publishedAt: string
+  account: TAccount
+}
+
 interface Media {
   id: number
   name: string

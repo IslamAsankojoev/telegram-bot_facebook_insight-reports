@@ -32,7 +32,7 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount)
   }))
 
   if(!insightsAllData[0]) {
-    return ctx.reply('Нет данных за вчерашний день')
+    return null
   }
 
   const insightsAdLevel = await facebookApi.getInsightsAdLevel({
@@ -51,25 +51,6 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount)
     }))
     .sort((a, b) => b.messages - a.messages)
 
-  const genderInsights = await facebookApi.getInsights({
-    since: yesterday,
-    until: yesterday,
-    breakdowns: 'gender',
-    id: account.ad_account_id,
-    access_token: account.marker,
-  })
-  const femaleLeads = getMessages(
-    genderInsights.find((insight) => insight.gender === 'female'),
-  ).messages
-
-  const maleLeads = getMessages(
-    genderInsights.find((insight) => insight.gender === 'male'),
-  ).messages
-
-  const unknownLeads = getMessages(
-    genderInsights.find((insight) => insight.gender === 'unknown'),
-  ).messages
-
   const ageInsights = await facebookApi.getInsights({
     since: yesterday,
     until: yesterday,
@@ -87,48 +68,6 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount)
       ageHashMap.set(age, messages)
     }
   })
-  // const ageInsightsArray = Array.from(ageHashMap.entries())
-  // const ageInsightsSorted = ageInsightsArray.sort((a, b) => b[1] - a[1])
-  // const topAgeInsights = ageInsightsSorted
-
-  // const platformsIsights = await facebookApi.getInsights({
-  //   since: yesterday,
-  //   until: yesterday,
-  //   breakdowns: 'publisher_platform',
-  //   id: account.ad_account_id,
-  //   access_token: account.marker,
-  // })
-
-  // const platformСoverageInPercent = platformsIsights.map((insight) => ({
-  //   publisher_platform: insight.publisher_platform,
-  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  // }))
-
-  // const countryInsights = await facebookApi.getInsights({
-  //   since: yesterday,
-  //   until: yesterday,
-  //   breakdowns: 'country',
-  //   id: account.ad_account_id,
-  //   access_token: account.marker,
-  // })
-
-  // const countryCoverageInPercent = countryInsights.map((insight) => ({
-  //   country: insight.country,
-  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  // }))
-
-  // const regionInsights = await facebookApi.getInsights({
-  //   since: yesterday,
-  //   until: yesterday,
-  //   breakdowns: 'region',
-  //   id: account.ad_account_id,
-  //   access_token: account.marker,
-  // })
-
-  // const regionCoverageInPercent = regionInsights.map((insight) => ({
-  //   region: insight.region,
-  //   percentage: (getMessages(insight).messages / insightsAllData[0]?.messages) * 100,
-  // }))
 
   const html = getHTMLTemplate({
     date: yesterday,
@@ -140,20 +79,13 @@ export const yesterdayReportCommand = async (ctx: BotContext, account: TAccount)
     conversion: roundToTwoDecimals(
       (insightsAllData[0]?.messages / insightsAllData[0]?.link_clicks) * 100,
     ),
-    // top_age: topAgeInsights,
-    // platform_coverage: platformСoverageInPercent,
-    // country_coverage: countryCoverageInPercent,
-    // region_coverage: regionCoverageInPercent,
     creative_insights: insightsAdLevelData,
     account,
     split: false,
   })
   const pdf = await createPdf(html)
-
-  await ctx.replyWithDocument(new InputFile(pdf, `Ежедневный отчет - (${yesterday}).pdf`), {
-    // caption: content,
-    // parse_mode: 'HTML',
-  })
+  const file = new InputFile(pdf, `Ежедневный отчет - (${yesterday}).pdf`)
+  return file
   } catch (error) {
     console.error(error)
     await ctx.reply('Произошла ошибка. Попробуйте позже.')

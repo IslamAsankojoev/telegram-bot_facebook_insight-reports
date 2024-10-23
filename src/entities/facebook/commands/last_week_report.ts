@@ -32,7 +32,7 @@ export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) 
     }))
 
     if (!insightsAllData[0]) {
-      return ctx.reply('Нет данных за последнюю неделю')
+      return null
     }
 
     const insightsAdLevel = await facebookApi.getInsightsAdLevel({
@@ -148,8 +148,8 @@ export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) 
       account,
     })
     const pdf = await createPdf(html)
-
-    await ctx.replyWithDocument(new InputFile(pdf, `Отчет - (${weekBackDate} по ${yesterday}).pdf`))
+    const file = new InputFile(pdf, `Отчет - (${weekBackDate} по ${yesterday}).pdf`)
+    return file
   } catch (error) {
     console.error(error)
     await ctx.reply('Произошла ошибка при формировании отчета')

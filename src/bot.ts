@@ -1,4 +1,4 @@
-import { Bot, Context, InlineKeyboard } from 'grammy'
+import { Bot, Context, InlineKeyboard, InputFile } from 'grammy'
 import {
   dateRangeReportCommand,
   lastMonthReportCommand,
@@ -20,57 +20,94 @@ const bot = new Bot<BotContext>(process.env.BOT_TOKEN!)
 
 bot.use(hydrateReply)
 
-bot.use(async (ctx, next) => {
-  const allowedUsers = await telegrammChatIdsApi.getChatIdsArray()
-  const userId = ctx.from?.id || 0
-  const messageText = ctx.message?.text || ''
-
-  const isChatIdCommand = messageText.startsWith('/chat_id')
-
-  if (!allowedUsers?.includes(userId.toString())) {
-    if (isChatIdCommand) {
-      await next()
-    } else {
-      return ctx.reply('🚫 У вас нет доступа к этому боту')
-    }
-  } else {
-    await next()
-  }
-})
-
 bot.api.setMyCommands([
-  { command: 'accounts', description: 'Выбрать аккаунт' },
-  // { command: 'all_accounts', description: 'Показать все аккаунты' },
-  { command: 'reports', description: 'Выбрать отчет' },
-  { command: 'chat_id', description: 'Получить чат ID' },
-  { command: 'current_account', description: 'Текущий аккаунт' },
+  { command: 'commands', description: 'Выбрать команду' },
 ])
-
-bot.command('chat_id', (ctx) => {
-  ctx.reply(`Ваш чат ID: ${ctx.from?.id}`)
-})
-
-bot.command('current_account', async (ctx) => {
-  const account = await strapiApi.getActiveAccount()
-  ctx.reply(`Текущий аккаунт: ${account?.name}`)
-})
 
 // -------------------------------------
 
-const active_accounts = 'accounts'
-bot.command('accounts', async (ctx) => {
-  const accountsKeyboard = new InlineKeyboard()
-  const accounts = (await strapiApi.getAccounts()) as TAccounts
-  const activeAccounts = accounts.data.filter((account) => account.active)
+const commands = [
+  {
+    name: 'accounts', 
+    description: 'Выбрать аккаунт',
+    callback: async (ctx:Context) => {
+      const accountsKeyboard = new InlineKeyboard()
+      const accounts = (await strapiApi.getAccounts()) as TAccounts
+      const activeAccounts = accounts.data.filter((account) => account.active)
+    
+      activeAccounts.forEach((account) => {
+        accountsKeyboard
+          .text(account.name, `accounts|${account.name}|${account.documentId}`)
+          .row()
+      })
+    
+      await ctx.editMessageText('Выберите аккаунт', {
+        reply_markup: accountsKeyboard,
+      })
+    },
+  },
+  { 
+    name: 'reports', 
+    description: 'Выбрать отчет',
+    callback: async (ctx:Context) => {
+      const reportKeyboard = new InlineKeyboard()
+    
+      reportActions.forEach((action) => {
+        reportKeyboard.text(action.text, `reports|chat|${action.text}`).row()
+      })
+      const account = (await strapiApi.getActiveAccount()) as TAccount
+      ctx.editMessageText(`Выберите отчет по проекту: ${account.name}`, {
+        reply_markup: reportKeyboard,
+      })
+    },
+  },
+  {
+    name: 'mail',
+    description: 'Рассылка',
+    callback: async (ctx:Context) => {
+      const reportsKeyboard = new InlineKeyboard()
+    
+      reportActions.forEach((action) => {
+        reportsKeyboard.text(action.text, `reports|group|${action.text}`).row()
+      })
+      ctx.editMessageText(`Выберите отчет для рассылки:`, {
+        reply_markup: reportsKeyboard,
+      })
+    },
+  },
+  { 
+    name: 'current_account', 
+    description: 'Текущий аккаунт',
+    callback: async (ctx:Context) => {
+      const account = await strapiApi.getActiveAccount()
+      ctx.editMessageText(`Текущий аккаунт: ${account?.name}`)
+    },
+  },
+  {
+    name: 'chat_id',
+    description: 'Получить chat_id',
+    callback: async (ctx:Context) => {
+      ctx.editMessageText(`Ваш chat_id: ${ctx.chat?.id}`)
+    },
+  }
+]
 
-  activeAccounts.forEach((account) => {
-    accountsKeyboard
-      .text(account.name, `${active_accounts}|${account.name}|${account.documentId}`)
+bot.command('commands', async (ctx) => {
+  const commandsKeyboard = new InlineKeyboard()
+  const allowedChats = await telegrammChatIdsApi.getChatIdsArray() 
+  const chatId = ctx.chat?.id || 0
+  const isAllowedChat = allowedChats?.includes(chatId.toString())
+  commands.forEach((command) => {
+    if (command.name !== 'chat_id' && !isAllowedChat) {
+      return null
+    }
+    commandsKeyboard
+      .text(command.description, `commands|${command.name}`)
       .row()
   })
 
-  await ctx.reply('Выберите аккаунт', {
-    reply_markup: accountsKeyboard,
+  await ctx.reply('Выберите команду', {
+    reply_markup: commandsKeyboard,
   })
 })
 
@@ -79,65 +116,100 @@ bot.command('accounts', async (ctx) => {
 const reportActions = [
   {
     text: 'Отчет за сегодня',
-    callback: todayReportCommand,
+    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+      console.log('report', account, chat_id)
+      const file = await todayReportCommand(ctx, account)
+      if(!file) return ctx.reply('Нет данных за сегодня')
+      bot.api.sendDocument(chat_id, file as InputFile, {
+        caption: 'Отчет за сегодня',
+      })
+    },
   },
   {
     text: 'Отчет за вчерашний день',
-    callback: yesterdayReportCommand,
+    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+      const file = await yesterdayReportCommand(ctx, account)
+      if(!file) return ctx.reply('Нет данных за вчерашний день')
+      bot.api.sendDocument(chat_id, file as InputFile, {
+        caption: 'Отчет за вчерашний день',
+      })
+    },
   },
   {
     text: 'Отчет за неделю',
-    callback: lastWeekReportCommand,
+    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+      const file = await lastWeekReportCommand(ctx, account)
+      if(!file) return ctx.reply('Нет данных за неделю')
+      bot.api.sendDocument(chat_id, file as InputFile, {
+        caption: 'Отчет за неделю',
+      })
+    },
   },
   {
     text: 'Отчет за месяц',
-    callback: lastMonthReportCommand,
+    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+      const file = await lastMonthReportCommand(ctx, account)
+      if(!file) return ctx.reply('Нет данных за месяц')
+      bot.api.sendDocument(chat_id, file as InputFile, {
+        caption: 'Отчет за месяц',
+      })
+    },
   },
   {
     text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
-    callback: dateRangeReportCommand,
+    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+      const file = await dateRangeReportCommand(ctx, account)
+      if(!file) return ctx.reply('Нет данных за этот период')
+      bot.api.sendDocument(chat_id, file as InputFile, {
+        caption: 'Отчет за период',
+      })
+    },
   },
 ]
 
-const reports = 'reports'
-bot.command('reports', async (ctx) => {
-  const reportKeyboard = new InlineKeyboard()
-
-  reportActions.forEach((action) => {
-    reportKeyboard.text(action.text, `${reports}|${action.text}`).row()
-  })
-  const account = (await strapiApi.getActiveAccount()) as TAccount
-  ctx.reply(`Выберите отчет по проекту: ${account.name}`, {
-    reply_markup: reportKeyboard,
-  })
-})
-
 bot.on('callback_query:data', async (ctx) => {
+  console.log(ctx.callbackQuery.data)
   const data = ctx.callbackQuery.data.split('|')
-  const account = (await strapiApi.getActiveAccount()) as TAccount
+  const currentAccount = (await strapiApi.getActiveAccount()) as TAccount
   const action = data[0]
   switch (action) {
-    case reports:
-      const report = reportActions.find((action) => action.text === data[1])
-      await report?.callback(ctx, account)
-      await ctx.editMessageText(`${account.name}`)
+    case 'reports':
+      const report = reportActions.find((action) => action.text === data[2])
+      if(data[1] === 'group') {
+        const allTelegramGroups = await strapiApi.getAllTelegramGroups()
+        const allAccoutns = await strapiApi.getAccounts()
+        allAccoutns?.data.forEach(async (account) => {
+          const group = allTelegramGroups?.data?.find((group) => group.account.documentId === account.documentId)
+          if(group?.chat_id){
+            await report?.callback(ctx, account, Number(group?.chat_id))
+            ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
+          }
+        })
+      }
+      if(data[1] === 'chat') {
+        console.log('chat')
+        await report?.callback(ctx, currentAccount, ctx.from?.id as number)
+        await ctx.editMessageText(`${currentAccount.name}`)
+      }
       break
-    case active_accounts:
-      const accountName = data[1]
-      const documentId = data[2]
-      await strapiApi.setCurrentAccount(documentId)
+    case 'accounts':
+      await strapiApi.setCurrentAccount(data[2])
 
       const reportKeyboard = new InlineKeyboard()
 
       reportActions.forEach((action) => {
-        reportKeyboard.text(action.text, `${reports}|${action.text}`).row()
+        reportKeyboard.text(action.text, `reports|chat|${action.text}`).row()
       })
 
-      await ctx.editMessageText(`Выберите отчет по проекту: ${accountName}`)
+      await ctx.editMessageText(`Выберите отчет по проекту: ${data[1]}`)
 
       await ctx.editMessageReplyMarkup({
         reply_markup: reportKeyboard,
       })
+      break
+    case 'commands':
+      const command = commands.find((command) => command.name === data[1])
+      await command?.callback(ctx)
       break
   }
 })

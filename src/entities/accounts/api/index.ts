@@ -1,5 +1,5 @@
 import { strapiApiConfig } from '../../../config'
-import type { TAccount, TAccounts, TCurrentAccount } from '../model'
+import type { TAccount, TAccounts, TCurrentAccount, TTelegramGroup } from '../model'
 
 export const strapiApi = {
   async getAccounts(): Promise<TAccounts | undefined> {
@@ -48,5 +48,20 @@ export const strapiApi = {
     return accounts?.data.find(
       (account) => account.documentId === currentAccount?.data.account.documentId,
     ) as TAccount
+  },
+  async getAllTelegramGroups(): Promise<Response<TTelegramGroup[]> | undefined> {
+    try {
+      const { data } = await strapiApiConfig.get('telegramm-groups?populate=*')
+      return data as Response<TTelegramGroup[]>
+    } catch (err) {
+      console.log('api error', err)
+    }
   }
+}
+
+
+//write generic for response
+interface Response<T> {
+  data: T
+  meta: null
 }
