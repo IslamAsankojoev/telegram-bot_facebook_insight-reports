@@ -149,7 +149,11 @@ export const lastWeekReportCommand = async (ctx: BotContext, account: TAccount) 
     })
     const pdf = await createPdf(html)
     const file = new InputFile(pdf, `Отчет - (${weekBackDate} по ${yesterday}).pdf`)
-    return file
+    return {
+      file,
+      leads: insightsAllData[0]?.messages,
+      spend: insightsAllData[0]?.spend,
+    }
   } catch (error) {
     console.error(error)
     await ctx.reply('Произошла ошибка при формировании отчета')

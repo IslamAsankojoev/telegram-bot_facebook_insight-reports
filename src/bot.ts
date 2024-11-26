@@ -75,14 +75,14 @@ const commands = [
       })
     },
   },
-  { 
-    name: 'current_account', 
-    description: 'Текущий аккаунт',
-    callback: async (ctx:Context) => {
-      const account = await strapiApi.getActiveAccount()
-      ctx.editMessageText(`Текущий аккаунт: ${account?.name}`)
-    },
-  },
+  // { 
+  //   name: 'current_account', 
+  //   description: 'Текущий аккаунт',
+  //   callback: async (ctx:Context) => {
+  //     const account = await strapiApi.getActiveAccount()
+  //     ctx.editMessageText(`Текущий аккаунт: ${account?.name}`)
+  //   },
+  // },
   {
     name: 'chat_id',
     description: 'Получить chat_id',
@@ -118,53 +118,78 @@ const reportActions = [
     text: 'Отчет за сегодня',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
       console.log('report', account, chat_id)
-      const file = await todayReportCommand(ctx, account)
-      if(!file) return ctx.reply('Нет данных за сегодня')
+      const result = await todayReportCommand(ctx, account)
+      if (!result || !result.file) return ctx.reply('Нет данных за сегодня')
+      const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
-        caption: 'Отчет за сегодня',
+        caption: `
+Отчет за сегодня
+Заявки: ${leads}
+Расход: ${spend}$
+`,
       })
     },
   },
   {
     text: 'Отчет за вчерашний день',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
-      const file = await yesterdayReportCommand(ctx, account)
-      if(!file) return ctx.reply('Нет данных за вчерашний день')
+      const result = await yesterdayReportCommand(ctx, account)
+      if (!result || !result.file) return ctx.reply('Нет данных за вчерашний день')
+      const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
-        caption: 'Отчет за вчерашний день',
+        caption: `
+Отчет за вчерашний день
+Заявки: ${leads}
+Расход: ${spend}$
+        `,
       })
     },
   },
   {
     text: 'Отчет за неделю',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
-      const file = await lastWeekReportCommand(ctx, account)
-      if(!file) return ctx.reply('Нет данных за неделю')
+      const result = await lastWeekReportCommand(ctx, account)
+      if (!result || !result.file) return ctx.reply('Нет данных за неделю')
+      const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
-        caption: 'Отчет за неделю',
+        caption: `
+Отчет за неделю
+Заявки: ${leads}
+Расход: ${spend}$
+        `,
       })
     },
   },
   {
     text: 'Отчет за месяц',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
-      const file = await lastMonthReportCommand(ctx, account)
-      if(!file) return ctx.reply('Нет данных за месяц')
+      const result = await lastMonthReportCommand(ctx, account)
+      if (!result || !result.file) return ctx.reply('Нет данных за месяц')
+        const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
-        caption: 'Отчет за месяц',
+        caption: `
+Отчет за месяц
+Заявки: ${leads}
+Расход: ${spend}$
+        `,
       })
     },
   },
-  {
-    text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
-    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
-      const file = await dateRangeReportCommand(ctx, account)
-      if(!file) return ctx.reply('Нет данных за этот период')
-      bot.api.sendDocument(chat_id, file as InputFile, {
-        caption: 'Отчет за период',
-      })
-    },
-  },
+//   {
+//     text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
+//     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+//       const result = await dateRangeReportCommand(ctx, account)
+//       if (!result || !result.file) return ctx.reply('Нет данных за этот период')
+//         const { file, leads, spend } = result
+//       bot.api.sendDocument(chat_id, file as InputFile, {
+//         caption: `
+// Отчет за период
+// Заявки: ${leads}
+// Расход: ${spend}$
+//         `,
+//       })
+//     },
+//   },
 ]
 
 bot.on('callback_query:data', async (ctx) => {
