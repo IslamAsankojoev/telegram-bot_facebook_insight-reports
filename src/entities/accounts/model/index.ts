@@ -10,6 +10,7 @@ export type TAccount = {
   publishedAt: string
   locale: null
   logo: Media
+  telegramm_group?: TTelegramGroup
 }
 
 export type TAccounts = {

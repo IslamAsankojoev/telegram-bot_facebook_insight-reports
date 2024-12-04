@@ -119,7 +119,7 @@ const reportActions = [
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
       console.log('report', account, chat_id)
       const result = await todayReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply('Нет данных за сегодня')
+      if (!result || !result.file) return ctx.reply(`Нет данных за сегодня ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -134,7 +134,7 @@ const reportActions = [
     text: 'Отчет за вчерашний день',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
       const result = await yesterdayReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply('Нет данных за вчерашний день')
+      if (!result || !result.file) return ctx.reply(`Нет данных за вчерашний день ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -149,7 +149,7 @@ const reportActions = [
     text: 'Отчет за неделю',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
       const result = await lastWeekReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply('Нет данных за неделю')
+      if (!result || !result.file) return ctx.reply(`Нет данных за неделю ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -164,7 +164,7 @@ const reportActions = [
     text: 'Отчет за месяц',
     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
       const result = await lastMonthReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply('Нет данных за месяц')
+      if (!result || !result.file) return ctx.reply(`Нет данных за месяц ${account.name}`)
         const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -201,13 +201,14 @@ bot.on('callback_query:data', async (ctx) => {
     case 'reports':
       const report = reportActions.find((action) => action.text === data[2])
       if(data[1] === 'group') {
-        const allTelegramGroups = await strapiApi.getAllTelegramGroups()
         const allAccoutns = await strapiApi.getAccounts()
         allAccoutns?.data.forEach(async (account) => {
-          const group = allTelegramGroups?.data?.find((group) => group.account.documentId === account.documentId)
-          if(group?.chat_id){
+          const group = account.telegramm_group
+          if(group && group?.chat_id){
             await report?.callback(ctx, account, Number(group?.chat_id))
             ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
+          } else {
+            ctx.editMessageText(`Не найден чат для ${account.name}`)
           }
         })
       }
