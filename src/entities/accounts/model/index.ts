@@ -56,7 +56,7 @@ export type TTelegramGroup = {
   createdAt: string
   updatedAt: string
   publishedAt: string
-  account: TAccount
+  accounts: TAccount[]
 }
 
 interface Media {
