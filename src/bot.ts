@@ -206,9 +206,10 @@ bot.on('callback_query:data', async (ctx) => {
           const group = account.telegramm_group
           if(group && group?.chat_id){
             await report?.callback(ctx, account, Number(group?.chat_id))
-            ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
+            console.log('group', group?.name, account.name)
+            // ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
           } else {
-            ctx.editMessageText(`Не найден чат для ${account.name}`)
+            // ctx.editMessageText(`Не найден чат для ${account.name}`)
           }
         })
       }
