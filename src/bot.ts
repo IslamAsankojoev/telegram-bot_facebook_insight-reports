@@ -123,6 +123,7 @@ const reportActions = [
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
+${account.name}
 Отчет за сегодня
 Заявки: ${leads}
 Расход: ${spend}$
@@ -138,6 +139,7 @@ const reportActions = [
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
+${account.name}
 Отчет за вчерашний день
 Заявки: ${leads}
 Расход: ${spend}$
@@ -153,6 +155,7 @@ const reportActions = [
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
+${account.name}
 Отчет за неделю
 Заявки: ${leads}
 Расход: ${spend}$
@@ -168,6 +171,7 @@ const reportActions = [
         const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
+${account.name}
 Отчет за месяц
 Заявки: ${leads}
 Расход: ${spend}$
