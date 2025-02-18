@@ -46,7 +46,7 @@ export const strapiApi = {
     const currentAccount = await strapiApi.getCurrentAccount()
     const accounts = await strapiApi.getAccounts()
     return accounts?.data.find(
-      (account) => account.documentId === currentAccount?.data.account.documentId,
+      (account) => account?.documentId === currentAccount?.data?.account?.documentId,
     ) as TAccount
   },
   async getAllTelegramGroups(): Promise<Response<TTelegramGroup[]> | undefined> {
