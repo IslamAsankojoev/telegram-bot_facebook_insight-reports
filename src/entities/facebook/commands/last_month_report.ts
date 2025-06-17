@@ -10,8 +10,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Bishkek")
 
-export const lastMonthReportCommand = async (ctx: Context, account: TAccount) => {
-  ctx.replyWithChatAction('typing')
+export const lastMonthReportCommand = async (ctx: Context | null, account: TAccount) => {
+  ctx && ctx.replyWithChatAction('typing')
   const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
   const monthBackDate = dayjs().subtract(31, 'day').format('YYYY-MM-DD')
 
@@ -156,6 +156,6 @@ export const lastMonthReportCommand = async (ctx: Context, account: TAccount) =>
     }
   } catch (error) {
     console.error(error)
-    ctx.reply('Произошла ошибка, попробуйте позже')
+    ctx && ctx.reply('Произошла ошибка, попробуйте позже')
   }
 }

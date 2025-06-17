@@ -10,11 +10,11 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Bishkek")
 
-export const dateRangeReportCommand = async (ctx: Context, account: TAccount) => {
-  ctx.replyWithChatAction('typing')
+export const dateRangeReportCommand = async (ctx: Context | null, account: TAccount) => {
+  ctx && ctx.replyWithChatAction('typing')
   const userMessage = ctx?.message?.text?.split(' ') || []
   if (!userMessage || userMessage.length < 3) {
-    return ctx.reply('Укажите даты начала и конца периода')
+    return ctx && ctx.reply('Укажите даты начала и конца периода')
   }
 
   const [_, __, ___, firstDate, secondDate] = userMessage
@@ -25,7 +25,7 @@ export const dateRangeReportCommand = async (ctx: Context, account: TAccount) =>
     ? dayjs(secondDate).format('YYYY-MM-DD')
     : dayjs().format('YYYY-MM-DD')
   if (startDate > endDate) {
-    return ctx.reply('Дата начала периода должна быть меньше даты окончания')
+    return ctx && ctx.reply('Дата начала периода должна быть меньше даты окончания')
   }
 
   try {
@@ -172,6 +172,6 @@ export const dateRangeReportCommand = async (ctx: Context, account: TAccount) =>
     }
   } catch (error) {
     console.error(error)
-    await ctx.reply('Произошла ошибка при формировании отчета')
+    ctx && await ctx.reply('Произошла ошибка при формировании отчета')
   }
 }

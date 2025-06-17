@@ -12,46 +12,66 @@ import { strapiApi } from './entities/accounts/api'
 import { telegrammChatIdsApi } from './entities/telegramChatIds/api'
 import { TAccount, TAccounts } from './entities/accounts/model'
 import * as dotenv from 'dotenv'
+import cron from 'node-cron'
 dotenv.config()
 
 export type BotContext = ParseModeFlavor<Context>
 
 const bot = new Bot<BotContext>(process.env.BOT_TOKEN!)
 
+console.log('Cron работает по часовому поясу:', Intl.DateTimeFormat().resolvedOptions().timeZone)
+console.log('Текущее время:', new Date().toLocaleString())
+cron.schedule('0 19 * * *', async () => {
+  try {
+    const report = reportActions.find((action) => action.text === 'Отчет за вчерашний день')
+    const allAccoutns = await strapiApi.getAccounts()
+    allAccoutns?.data.forEach(async (account) => {
+      const group = account.telegramm_group
+      if (group && group?.chat_id) {
+        await report?.callback(null, account, Number(group?.chat_id))
+        console.log('group', group?.name, account.name)
+      } else {
+        // ctx.editMessageText(`Не найден чат для ${account.name}`)
+      }
+    })
+    console.log('Сообщение успешно отправлено')
+  } catch (err) {
+    console.error('Ошибка при отправке сообщения:', err)
+  }
+}, {
+  timezone: 'Asia/Bishkek',
+})
+
 bot.use(hydrateReply)
 
-bot.api.setMyCommands([
-  { command: 'commands', description: 'Выбрать команду' },
-])
+bot.api.setMyCommands([{ command: 'commands', description: 'Выбрать команду' }])
 
 // -------------------------------------
 
 const commands = [
   {
-    name: 'accounts', 
+    name: 'accounts',
     description: 'Выбрать аккаунт',
-    callback: async (ctx:Context) => {
+    callback: async (ctx: Context) => {
       const accountsKeyboard = new InlineKeyboard()
       const accounts = (await strapiApi.getAccounts()) as TAccounts
       const activeAccounts = accounts.data.filter((account) => account.active)
-    
+
       activeAccounts.forEach((account) => {
-        accountsKeyboard
-          .text(account.name, `accounts|${account.name}|${account.documentId}`)
-          .row()
+        accountsKeyboard.text(account.name, `accounts|${account.name}|${account.documentId}`).row()
       })
-    
+
       await ctx.editMessageText('Выберите аккаунт', {
         reply_markup: accountsKeyboard,
       })
     },
   },
-  { 
-    name: 'reports', 
+  {
+    name: 'reports',
     description: 'Выбрать отчет',
-    callback: async (ctx:Context) => {
+    callback: async (ctx: Context) => {
       const reportKeyboard = new InlineKeyboard()
-    
+
       reportActions.forEach((action) => {
         reportKeyboard.text(action.text, `reports|chat|${action.text}`).row()
       })
@@ -64,9 +84,9 @@ const commands = [
   {
     name: 'mail',
     description: 'Рассылка',
-    callback: async (ctx:Context) => {
+    callback: async (ctx: Context) => {
       const reportsKeyboard = new InlineKeyboard()
-    
+
       reportActions.forEach((action) => {
         reportsKeyboard.text(action.text, `reports|group|${action.text}`).row()
       })
@@ -75,8 +95,8 @@ const commands = [
       })
     },
   },
-  // { 
-  //   name: 'current_account', 
+  // {
+  //   name: 'current_account',
   //   description: 'Текущий аккаунт',
   //   callback: async (ctx:Context) => {
   //     const account = await strapiApi.getActiveAccount()
@@ -86,24 +106,22 @@ const commands = [
   {
     name: 'chat_id',
     description: 'Получить chat_id',
-    callback: async (ctx:Context) => {
+    callback: async (ctx: Context) => {
       ctx.editMessageText(`Ваш chat_id: ${ctx.chat?.id}`)
     },
-  }
+  },
 ]
 
 bot.command('commands', async (ctx) => {
   const commandsKeyboard = new InlineKeyboard()
-  const allowedChats = await telegrammChatIdsApi.getChatIdsArray() 
+  const allowedChats = await telegrammChatIdsApi.getChatIdsArray()
   const chatId = ctx.chat?.id || 0
   const isAllowedChat = allowedChats?.includes(chatId.toString())
   commands.forEach((command) => {
     if (command.name !== 'chat_id' && !isAllowedChat) {
       return null
     }
-    commandsKeyboard
-      .text(command.description, `commands|${command.name}`)
-      .row()
+    commandsKeyboard.text(command.description, `commands|${command.name}`).row()
   })
 
   await ctx.reply('Выберите команду', {
@@ -116,10 +134,10 @@ bot.command('commands', async (ctx) => {
 const reportActions = [
   {
     text: 'Отчет за сегодня',
-    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+    callback: async (ctx: BotContext | null, account: TAccount, chat_id: number) => {
       console.log('report', account, chat_id)
       const result = await todayReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply(`Нет данных за сегодня ${account.name}`)
+      if (!result || !result.file) return ctx && ctx.reply(`Нет данных за сегодня ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -133,9 +151,9 @@ ${account.name}
   },
   {
     text: 'Отчет за вчерашний день',
-    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+    callback: async (ctx: BotContext | null, account: TAccount, chat_id: number) => {
       const result = await yesterdayReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply(`Нет данных за вчерашний день ${account.name}`)
+      if (!result || !result.file) return ctx && ctx.reply(`Нет данных за вчерашний день ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -149,9 +167,9 @@ ${account.name}
   },
   {
     text: 'Отчет за неделю',
-    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+    callback: async (ctx: BotContext | null, account: TAccount, chat_id: number) => {
       const result = await lastWeekReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply(`Нет данных за неделю ${account.name}`)
+      if (!result || !result.file) return ctx && ctx.reply(`Нет данных за неделю ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -165,10 +183,10 @@ ${account.name}
   },
   {
     text: 'Отчет за месяц',
-    callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+    callback: async (ctx: BotContext | null, account: TAccount, chat_id: number) => {
       const result = await lastMonthReportCommand(ctx, account)
-      if (!result || !result.file) return ctx.reply(`Нет данных за месяц ${account.name}`)
-        const { file, leads, spend } = result
+      if (!result || !result.file) return ctx && ctx.reply(`Нет данных за месяц ${account.name}`)
+      const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
 ${account.name}
@@ -179,21 +197,21 @@ ${account.name}
       })
     },
   },
-//   {
-//     text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
-//     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
-//       const result = await dateRangeReportCommand(ctx, account)
-//       if (!result || !result.file) return ctx.reply('Нет данных за этот период')
-//         const { file, leads, spend } = result
-//       bot.api.sendDocument(chat_id, file as InputFile, {
-//         caption: `
-// Отчет за период
-// Заявки: ${leads}
-// Расход: ${spend}$
-//         `,
-//       })
-//     },
-//   },
+  //   {
+  //     text: 'Отчет за период YYYY-MM-DD YYYY-MM-DD',
+  //     callback: async (ctx:BotContext, account:TAccount, chat_id:number)=>{
+  //       const result = await dateRangeReportCommand(ctx, account)
+  //       if (!result || !result.file) return ctx.reply('Нет данных за этот период')
+  //         const { file, leads, spend } = result
+  //       bot.api.sendDocument(chat_id, file as InputFile, {
+  //         caption: `
+  // Отчет за период
+  // Заявки: ${leads}
+  // Расход: ${spend}$
+  //         `,
+  //       })
+  //     },
+  //   },
 ]
 
 bot.on('callback_query:data', async (ctx) => {
@@ -204,11 +222,11 @@ bot.on('callback_query:data', async (ctx) => {
   switch (action) {
     case 'reports':
       const report = reportActions.find((action) => action.text === data[2])
-      if(data[1] === 'group') {
+      if (data[1] === 'group') {
         const allAccoutns = await strapiApi.getAccounts()
         allAccoutns?.data.forEach(async (account) => {
           const group = account.telegramm_group
-          if(group && group?.chat_id){
+          if (group && group?.chat_id) {
             await report?.callback(ctx, account, Number(group?.chat_id))
             console.log('group', group?.name, account.name)
             // ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
@@ -217,7 +235,7 @@ bot.on('callback_query:data', async (ctx) => {
           }
         })
       }
-      if(data[1] === 'chat') {
+      if (data[1] === 'chat') {
         console.log('chat')
         await report?.callback(ctx, currentAccount, ctx.from?.id as number)
         await ctx.editMessageText(`${currentAccount.name}`)

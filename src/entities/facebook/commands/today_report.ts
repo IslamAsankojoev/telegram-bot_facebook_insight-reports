@@ -11,8 +11,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Bishkek")
 
-export const todayReportCommand = async (ctx: BotContext, account: TAccount) => {
-  ctx.replyWithChatAction('typing')
+export const todayReportCommand = async (ctx: BotContext | null, account: TAccount) => {
+  ctx && ctx.replyWithChatAction('typing')
   const today = dayjs().format('YYYY-MM-DD')
 
   try {
@@ -99,6 +99,6 @@ export const todayReportCommand = async (ctx: BotContext, account: TAccount) => 
     }
   } catch (error) {
     console.error(error)
-    await ctx.reply('Произошла ошибка. Попробуйте позже.')
+    ctx && await ctx.reply('Произошла ошибка. Попробуйте позже.')
   }
 }
