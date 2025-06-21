@@ -33,7 +33,7 @@ export const getHTMLTemplate = ({ split = true, ...props }: IHTMLTemplate) => {
     'dist',
     'public',
     'images',
-    'verfy-icon.png'
+    'lidforce.png'
   )
   const verifyBase64 = fs.readFileSync(verifyPath).toString('base64')
   const verifySrc = `data:image/jpeg;base64,${verifyBase64}`
@@ -60,7 +60,7 @@ export const getHTMLTemplate = ({ split = true, ...props }: IHTMLTemplate) => {
       justify-content: flex-end;
     }
     .verify img {
-      width: 30px;
+      width: 90px;
       height: 30px;
       margin-left: 10px;
     }
@@ -246,7 +246,6 @@ export const getHTMLTemplate = ({ split = true, ...props }: IHTMLTemplate) => {
     </table>
   </div>
   <div class="verify">
-  <p>EldiyarGet</p>
   <img  src=${verifySrc} alt="Facebook">
   </div>
 

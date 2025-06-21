@@ -29,6 +29,7 @@ cron.schedule('0 19 * * *', async () => {
       const group = account.telegramm_group
       if (group && group?.chat_id) {
         await report?.callback(null, account, Number(group?.chat_id))
+        await report?.callback(null, account, -4559054834)// to our group
         console.log('group', group?.name, account.name)
       } else {
         // ctx.editMessageText(`Не найден чат для ${account.name}`)
@@ -228,6 +229,7 @@ bot.on('callback_query:data', async (ctx) => {
           const group = account.telegramm_group
           if (group && group?.chat_id) {
             await report?.callback(ctx, account, Number(group?.chat_id))
+            await report?.callback(ctx, account, -4559054834)// to our group
             console.log('group', group?.name, account.name)
             // ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
           } else {
