@@ -21,27 +21,31 @@ const bot = new Bot<BotContext>(process.env.BOT_TOKEN!)
 
 console.log('Cron работает по часовому поясу:', Intl.DateTimeFormat().resolvedOptions().timeZone)
 console.log('Текущее время:', new Date().toLocaleString())
-cron.schedule('0 19 * * *', async () => {
-  try {
-    const report = reportActions.find((action) => action.text === 'Отчет за вчерашний день')
-    const allAccoutns = await strapiApi.getAccounts()
-    allAccoutns?.data.forEach(async (account) => {
-      const group = account.telegramm_group
-      if (group && group?.chat_id) {
-        await report?.callback(null, account, Number(group?.chat_id))
-        await report?.callback(null, account, -4559054834)// to our group
-        console.log('group', group?.name, account.name)
-      } else {
-        // ctx.editMessageText(`Не найден чат для ${account.name}`)
-      }
-    })
-    console.log('Сообщение успешно отправлено')
-  } catch (err) {
-    console.error('Ошибка при отправке сообщения:', err)
-  }
-}, {
-  timezone: 'Asia/Bishkek',
-})
+cron.schedule(
+  '0 19 * * *',
+  async () => {
+    try {
+      const report = reportActions.find((action) => action.text === 'Отчет за вчерашний день')
+      const allAccoutns = await strapiApi.getAccounts()
+      allAccoutns?.data.forEach(async (account) => {
+        const group = account.telegramm_group
+        await report?.callback(null, account, -4559054834) // to our group
+        if (group && group?.chat_id) {
+          await report?.callback(null, account, Number(group?.chat_id))
+          console.log('group', group?.name, account.name)
+        } else {
+          // ctx.editMessageText(`Не найден чат для ${account.name}`)
+        }
+      })
+      console.log('Сообщение успешно отправлено')
+    } catch (err) {
+      console.error('Ошибка при отправке сообщения:', err)
+    }
+  },
+  {
+    timezone: 'Asia/Bishkek',
+  },
+)
 
 bot.use(hydrateReply)
 
@@ -154,7 +158,8 @@ ${account.name}
     text: 'Отчет за вчерашний день',
     callback: async (ctx: BotContext | null, account: TAccount, chat_id: number) => {
       const result = await yesterdayReportCommand(ctx, account)
-      if (!result || !result.file) return ctx && ctx.reply(`Нет данных за вчерашний день ${account.name}`)
+      if (!result || !result.file)
+        return ctx && ctx.reply(`Нет данных за вчерашний день ${account.name}`)
       const { file, leads, spend } = result
       bot.api.sendDocument(chat_id, file as InputFile, {
         caption: `
@@ -227,9 +232,9 @@ bot.on('callback_query:data', async (ctx) => {
         const allAccoutns = await strapiApi.getAccounts()
         allAccoutns?.data.forEach(async (account) => {
           const group = account.telegramm_group
+          await report?.callback(ctx, account, -4559054834) // to our group
           if (group && group?.chat_id) {
             await report?.callback(ctx, account, Number(group?.chat_id))
-            await report?.callback(ctx, account, -4559054834)// to our group
             console.log('group', group?.name, account.name)
             // ctx.editMessageText(`${data[2]} отправлен в ${group?.name}`)
           } else {
