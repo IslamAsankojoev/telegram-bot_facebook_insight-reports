@@ -9,6 +9,7 @@ export type TAccount = {
   updatedAt: string
   publishedAt: string
   locale: null
+  weeklyStartDate: string | null
   logo: Media
   telegramm_group?: TTelegramGroup
 }

@@ -41,6 +41,43 @@ cron.schedule(
     } catch (err) {
       console.error('Ошибка при отправке сообщения:', err)
     }
+
+    try {
+      const report = reportActions.find((action) => action.text === 'Отчет за неделю')
+      const allAccoutns = await strapiApi.getAccounts()
+      allAccoutns?.data.forEach(async (account) => {
+        const weeklyStartDate = account.weeklyStartDate
+        const today = new Date()
+        const start = weeklyStartDate ? new Date(weeklyStartDate) : null
+
+        if (start) {
+          start.setHours(0, 0, 0, 0)
+          today.setHours(0, 0, 0, 0)
+
+          const diffInDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+
+          if (diffInDays >= 0 && diffInDays % 7 === 0) {
+            const group = account.telegramm_group
+            await report?.callback(null, account, -4559054834)
+            if (group?.chat_id) {
+              await report?.callback(null, account, Number(group.chat_id))
+              console.log('group', group.name, account.name)
+            }
+          }
+          const group = account.telegramm_group
+          await report?.callback(null, account, -4559054834)
+          if (group && group?.chat_id) {
+            await report?.callback(null, account, Number(group?.chat_id))
+            console.log('group', group?.name, account.name)
+          } else {
+            // ctx.editMessageText(`Не найден чат для ${account.name}`)
+          }
+        }
+      })
+      console.log('Сообщение успешно отправлено')
+    } catch (err) {
+      console.error('Ошибка при отправке сообщения:', err)
+    }
   },
   {
     timezone: 'Asia/Bishkek',
