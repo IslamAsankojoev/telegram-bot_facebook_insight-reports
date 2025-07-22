@@ -64,14 +64,6 @@ cron.schedule(
               console.log('group', group.name, account.name)
             }
           }
-          const group = account.telegramm_group
-          await report?.callback(null, account, -4559054834)
-          if (group && group?.chat_id) {
-            await report?.callback(null, account, Number(group?.chat_id))
-            console.log('group', group?.name, account.name)
-          } else {
-            // ctx.editMessageText(`Не найден чат для ${account.name}`)
-          }
         }
       })
       console.log('Сообщение успешно отправлено')
