@@ -29,7 +29,7 @@ cron.schedule(
       const allAccoutns = await strapiApi.getAccounts()
       allAccoutns?.data.forEach(async (account) => {
         const group = account.telegramm_group
-        await report?.callback(null, account, -4559054834) // to our group
+        // await report?.callback(null, account, -4559054834) // to our group
         if (group && group?.chat_id) {
           await report?.callback(null, account, Number(group?.chat_id))
           console.log('group', group?.name, account.name)
